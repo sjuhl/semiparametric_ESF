@@ -2,7 +2,7 @@
 # Simulation Function
 ##########################
 
-sim_func <- function(spmultiplier,beta,W,sd.e,n,SEM=F,ideal.setsize=F){
+sim_func <- function(spmultiplier,beta,sd.e,n,SEM=F,ideal.setsize=F){
   ### SIMULATE TRUE DGP ###
   # covars
   x <- rnorm(n,0,1)
