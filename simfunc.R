@@ -2,16 +2,17 @@
 # Simulation Function
 ##########################
 
-sim_func <- function(spmultiplier,beta,sd.e,n,SEM=F,ideal.setsize=F){
+sim_func <- function(spmultiplier,beta,sd.e,W,SEM=F,ideal.setsize=F){
   ### SIMULATE TRUE DGP ###
+  n <- nrow(spmultiplier)
   # covars
   x <- rnorm(n,0,1)
   # iid errors
   e <- rnorm(n,0,sd.e)
   # spatial DGPs
   if(SEM){
-    y <- a + x*b + spmultiplier %*% e
-  } else y <- spmultiplier %*% (a + x*b + e)
+    y <- x*b + spmultiplier %*% e
+  } else y <- spmultiplier %*% (x*b + e)
   
   ### ESTIMATION ###
   # ols
@@ -23,12 +24,12 @@ sim_func <- function(spmultiplier,beta,sd.e,n,SEM=F,ideal.setsize=F){
   esf_pMI <- lmFilter(y=y,x=x,W=W,positive=T,objfn="p",sig=.05,ideal.setsize=ideal.setsize)
   
   ### Output ###
-  out <- data.frame(ols=summary(ols_sar)$coefficients["x","Estimate"]
+  out <- data.frame(ols=summary(ols)$coefficients["x","Estimate"]
                     ,filtered_R2=esf_R2$estimates["beta_1","Estimate"]
                     ,filtered_p=esf_p$estimates["beta_1","Estimate"]
                     ,filtered_MI=esf_MI$estimates["beta_1","Estimate"]
                     ,filtered_pMI=esf_pMI$estimates["beta_1","Estimate"]
-                    ,se_ols=summary(ols_sar)$coefficients["x","Std. Error"]
+                    ,se_ols=summary(ols)$coefficients["x","Std. Error"]
                     ,se_filtered_R2=esf_R2$estimates["beta_1","SE"]
                     ,se_filtered_p=esf_p$estimates["beta_1","SE"]
                     ,se_filtered_MI=esf_MI$estimates["beta_1","SE"]
@@ -38,7 +39,7 @@ sim_func <- function(spmultiplier,beta,sd.e,n,SEM=F,ideal.setsize=F){
                     ,fit_filtered_p=esf_p$fit["Filtered"]
                     ,fit_filtered_MI=esf_MI$fit["Filtered"]
                     ,fit_filtered_pMI=esf_pMI$fit["Filtered"]
-                    ,moran_init=esf_sar_R2$moran["Initial","z"]
+                    ,moran_init=esf_R2$moran["Initial","z"]
                     ,moran_filtered_R2=esf_R2$moran["Filtered","z"]
                     ,moran_filtered_p=esf_p$moran["Filtered","z"]
                     ,moran_filtered_MI=esf_MI$moran["Filtered","z"]
