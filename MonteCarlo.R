@@ -2,10 +2,11 @@
 # Monte Carlo Simulations
 ##########################
 
-# clean environment and set working directory
+# clean environment
 rm(list=ls())
 
-# load spatial packages
+### load packages
+# spatial packages
 library(spdep) # for W
 library(spfilteR) # for filtering
 
@@ -14,7 +15,7 @@ library(foreach)
 library(doParallel)
 library(doRNG)
 
-# get simulation function
+# read simulation function
 source("./simfunc.R")
 
 # load matrices
@@ -52,6 +53,13 @@ multipliers <- apply(grid,1,function(x) solve(diag(1,nrow(W[[x[2]]]))-x[1]*W[[x[
 # cross-sections
 n <- sapply(W, nrow)
 
+# covariates
+set.seed(123)
+covars <- list()
+for(i in seq_along(n)){
+  covars[[i]] <- rnorm(n[i],0,1)
+}
+
 ninput <- nrow(grid)
 nsim <- 1000
 
@@ -66,7 +74,7 @@ nrow(input)==ninput*nsim
 
 
 # test
-sim_func(spmultiplier=multipliers[[input$multi_id[1]]]
+sim_func(spmultiplier=multipliers[[input$multi_id[1]]],x=covars[[W_id[1]]]
          ,beta=b,sd.e=sd.e,W=W[[input$W_id[1]]],SEM=input$SEM[1],ideal.setsize=F)
 
 
@@ -83,7 +91,7 @@ start.time <- Sys.time()
 sim_out <- foreach(i=1:nrow(input), .combine=rbind,
                    .packages=c("spdep","spfilteR")
                    ) %dopar% {
-                     sim_func(spmultiplier=multipliers[[input$multi_id[i]]]
+                     sim_func(spmultiplier=multipliers[[input$multi_id[i]]],x=covars[[W_id[i]]]
                               ,beta=b,sd.e=sd.e,W=W[[input$W_id[i]]],SEM=F,ideal.setsize=F)
                      }
 stopCluster(cl)
