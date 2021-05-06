@@ -2,11 +2,9 @@
 # Simulation Function
 ##########################
 
-sim_func <- function(spmultiplier,beta,sd.e,W,SEM=F,ideal.setsize=F){
+sim_func <- function(spmultiplier,x,beta,sd.e,W,SEM=F,ideal.setsize=F){
   ### SIMULATE TRUE DGP ###
   n <- nrow(spmultiplier)
-  # covars
-  x <- rnorm(n,0,1)
   # iid errors
   e <- rnorm(n,0,sd.e)
   # spatial DGPs
