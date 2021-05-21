@@ -38,7 +38,7 @@ all.equal(target=1, current=as.numeric(eigen(z.W_cd116)$values[1]))
 
 # parameters
 b <- 1
-sd.e <- 1 # standard deviation of disturbances
+sigma2 <- c(1,2) # variance of disturbances
 SEM <- c(TRUE,FALSE)
 
 # calculate spatial multipliers
@@ -46,8 +46,9 @@ p <- c(0,.25,.5,.75)
 W <- list(z.W_states,z.W_cities,z.W_cd116)
 W_id <- c(1,2,3)
 
-grid <- matrix(as.matrix(cbind(expand.grid(p,W_id,SEM),seq_len(length(p)*length(W)))),ncol=4
-               ,dimnames=list(NULL, c("p", "W_id","SEM","multi_id")))
+grid <- matrix(as.matrix(cbind(expand.grid(p,W_id,sigma2,SEM),seq_len(length(p)*length(W)))),ncol=5
+               ,dimnames=list(NULL, c("p", "W_id","sigma2","SEM","multi_id")))
+#unique(grid[grid[,"multi_id"]==6,c("p","W_id")])
 multipliers <- apply(grid,1,function(x) solve(diag(1,nrow(W[[x[2]]]))-x[1]*W[[x[2]]]))
 
 # cross-sections
@@ -65,17 +66,22 @@ nsim <- 1000
 
 # specify function inputs
 input <- data.frame(do.call(rbind,replicate(nsim,grid,simplify=F)))
-input <- input[order(input$W_id,input$p,input$multi_id,input$SEM),]
+input <- input[order(input$W_id,input$p,input$multi_id,input$sigma2,input$SEM),]
 input$SEM <- input$SEM==1
+unique(input)
 rownames(input) <- 1:nrow(input)
+
+# add n to input matrix
+input$n <- n[input$W_id]
 
 # check
 nrow(input)==ninput*nsim
 
 
 # test
-sim_func(spmultiplier=multipliers[[input$multi_id[1]]],x=covars[[W_id[1]]]
-         ,beta=b,sd.e=sd.e,W=W[[input$W_id[1]]],SEM=input$SEM[1],ideal.setsize=F)
+#sim_func(spmultiplier=multipliers[[input$multi_id[1]]],x=covars[[input$W_id[1]]]
+#         ,beta=b,sigma2=input$sigma2[1],W=W[[input$W_id[1]]],SEM=input$SEM[1]
+#         ,ideal.setsize=F)
 
 
 # parallel computing
@@ -91,8 +97,9 @@ start.time <- Sys.time()
 sim_out <- foreach(i=1:nrow(input), .combine=rbind,
                    .packages=c("spdep","spfilteR")
                    ) %dopar% {
-                     sim_func(spmultiplier=multipliers[[input$multi_id[i]]],x=covars[[W_id[i]]]
-                              ,beta=b,sd.e=sd.e,W=W[[input$W_id[i]]],SEM=F,ideal.setsize=F)
+                     sim_func(spmultiplier=multipliers[[input$multi_id[i]]],x=covars[[input$W_id[i]]]
+                              ,beta=b,sigma2=input$sigma2[i],W=W[[input$W_id[i]]],SEM=input$SEM[i]
+                              ,ideal.setsize=F)
                      }
 stopCluster(cl)
 
@@ -105,5 +112,5 @@ ifelse(!dir.exists(file.path("./SimOut"))
        ,dir.create(file.path("./SimOut")), FALSE)
 
 # save output
-save(input,sim_out,nsim,time.taken,session_info,file="./SimOut/MC_Out.RData")
+save(input,sim_out,covars,nsim,time.taken,session_info,file="./SimOut/MC_Out.RData")
 
