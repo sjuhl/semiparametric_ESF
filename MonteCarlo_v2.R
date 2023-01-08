@@ -109,9 +109,9 @@ session_info <- sessionInfo()
 
 
 # create empty folder (if not existing already)
-ifelse(!dir.exists(file.path("./SimOut"))
-       ,dir.create(file.path("./SimOut")), FALSE)
+ifelse(!dir.exists(file.path("./SimOut_v2"))
+       ,dir.create(file.path("./SimOut_v2")), FALSE)
 
 # save output
-save(input,sim_out,covars,nsim,time.taken,session_info,file="./SimOut/MC_Out.RData")
+save(input,sim_out,covars,nsim,time.taken,session_info,file="./SimOut_v2/MC_Out.RData")
 
