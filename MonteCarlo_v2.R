@@ -68,7 +68,7 @@ nsim <- 1000
 
 # specify function inputs
 input <- data.frame(do.call(rbind,replicate(nsim,grid,simplify=F)))
-input <- input[order(input$dgp_id,input$W_id,input$p,input$multi_id),]
+input <- input[order(input$dgp_type, input$dgp_id,input$W_id,input$p,input$multi_id),]
 unique(input)
 rownames(input) <- 1:nrow(input)
 
@@ -78,6 +78,8 @@ input$n <- n[input$W_id]
 # check
 nrow(input)==ninput*nsim
 
+# remove rho > 0 when DGP type == 'OLS
+input <- input[!(input$dgp_type == 'OLS' & input$p > 0),]
 
 # test
 #sim_func(spmultiplier=multipliers[[input$multi_id[1]]],W=W[[input$W_id[1]]]
@@ -94,13 +96,21 @@ registerDoRNG(12345)
 
 # start timer
 start.time <- Sys.time()
+
+# initialize progress bar
+pb <- txtProgressBar(min = 0, max = nrow(input), initial = 0)
+
 # simulate
 sim_out <- foreach(i=1:nrow(input), .combine=rbind,
                    .packages=c("spdep","spatialreg","spfilteR")
                    ) %dopar% {
+                     # simulation function
                      sim_func(spmultiplier=multipliers[[input$multi_id[i]]],W=W[[input$W_id[i]]]
                               ,x=covars[[input$W_id[i]]],beta=b,dgp_type=dgp_type[[input$dgp_id[i]]]
                               ,ideal.setsize=F)
+                     # progress bar
+                     setTxtProgressBar(pb,i)
+                     close(pb)
                      }
 stopCluster(cl)
 
