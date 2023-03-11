@@ -68,7 +68,7 @@ nsim <- 1000
 
 # specify function inputs
 input <- data.frame(do.call(rbind,replicate(nsim,grid,simplify=F)))
-input <- input[order(input$dgp_type, input$dgp_id,input$W_id,input$p,input$multi_id),]
+input <- input[order(input$dgp_id,input$W_id,input$p,input$multi_id),]
 unique(input)
 rownames(input) <- 1:nrow(input)
 
@@ -76,7 +76,7 @@ rownames(input) <- 1:nrow(input)
 input$n <- n[input$W_id]
 
 # check
-nrow(input)==ninput*nsim
+nrow(input) == ninput*nsim
 
 # remove rho > 0 when DGP type == 'OLS
 input <- input[!(input$dgp_type == 'OLS' & input$p > 0),]
@@ -98,7 +98,8 @@ registerDoRNG(12345)
 start.time <- Sys.time()
 
 # initialize progress bar
-pb <- txtProgressBar(min = 0, max = nrow(input), initial = 0)
+pb <- txtProgressBar(min = 0, max = nrow(input), initial = 0
+                     ,char = "*", title = "Progress")
 
 # simulate
 sim_out <- foreach(i=1:nrow(input), .combine=rbind,
