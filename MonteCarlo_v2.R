@@ -15,6 +15,7 @@ library(spfilteR) # for filtering
 library(foreach)
 library(doParallel)
 library(doRNG)
+library(doSNOW) # for the progress bar
 
 # read simulation function
 source("./simfunc_v2.R")
@@ -50,7 +51,7 @@ W <- list(z.W_states, z.W_cities, z.W_cd116)
 W_id <- c(1,2,3)
 
 grid <- matrix(as.matrix(cbind(expand.grid(p,W_id,dgp_id),seq_len(length(p)*length(W)))),ncol=4
-               ,dimnames=list(NULL, c("p", "W_id","dgp_id","multi_id")))
+               ,dimnames=list(NULL, c("p", "W_id","dgp_type","multi_id")))
 multipliers <- apply(grid,1,function(x) solve(diag(1,nrow(W[[x[2]]]))-x[1]*W[[x[2]]]))
 
 # cross-sections
@@ -68,7 +69,10 @@ nsim <- 1000
 
 # specify function inputs
 input <- data.frame(do.call(rbind,replicate(nsim,grid,simplify=F)))
-input <- input[order(input$dgp_id,input$W_id,input$p,input$multi_id),]
+input <- input[order(input$dgp_type,input$W_id,input$p,input$multi_id),]
+# put correct dgp_type into dataframe
+input$dgp_type <- dgp_type[input[,'dgp_type']]
+
 unique(input)
 rownames(input) <- 1:nrow(input)
 
@@ -78,12 +82,15 @@ input$n <- n[input$W_id]
 # check
 nrow(input) == ninput*nsim
 
-# remove rho > 0 when DGP type == 'OLS
+# remove rho > 0 when DGP type == 'OLS'
 input <- input[!(input$dgp_type == 'OLS' & input$p > 0),]
+
+# remove rho == 0 when DGP != 'OLS'
+input <- input[!(input$dgp_type != 'OLS' & input$p == 0),]
 
 # test
 #sim_func(spmultiplier=multipliers[[input$multi_id[1]]],W=W[[input$W_id[1]]]
-#         ,x=covars[[input$W_id[1]]],beta=b,dgp_type=dgp_type[[input$dgp_id[1]]]
+#         ,x=covars[[input$W_id[1]]],beta=b,dgp_type=input$dgp_type[1]
 #         ,ideal.setsize=F)
 
 
@@ -91,28 +98,28 @@ input <- input[!(input$dgp_type == 'OLS' & input$p > 0),]
 (ncores <- detectCores())
 nworkers <- ncores - 1
 cl <- makeCluster(nworkers)
-registerDoParallel(cl)
+#registerDoParallel(cl)
+registerDoSNOW(cl)
 registerDoRNG(12345)
 
 # start timer
 start.time <- Sys.time()
 
 # initialize progress bar
-pb <- txtProgressBar(min = 0, max = nrow(input), initial = 0
-                     ,char = "*", title = "Progress")
+pb <- txtProgressBar(max = nrow(input), style = 3)
+progress <- function(n) setTxtProgressBar(pb, n)
+opts <- list(progress = progress)
 
 # simulate
-sim_out <- foreach(i=1:nrow(input), .combine=rbind,
-                   .packages=c("spdep","spatialreg","spfilteR")
+sim_out <- foreach(i = nrow(input), .combine = rbind, .options.snow = opts,
+                   .packages = c("spdep","spatialreg","spfilteR")
                    ) %dopar% {
                      # simulation function
                      sim_func(spmultiplier=multipliers[[input$multi_id[i]]],W=W[[input$W_id[i]]]
-                              ,x=covars[[input$W_id[i]]],beta=b,dgp_type=dgp_type[[input$dgp_id[i]]]
+                              ,x=covars[[input$W_id[i]]],beta=b,dgp_type=input$dgp_type[i]
                               ,ideal.setsize=F)
-                     # progress bar
-                     setTxtProgressBar(pb,i)
-                     close(pb)
-                     }
+                   }
+close(pb)
 stopCluster(cl)
 
 (time.taken <- Sys.time() - start.time)
