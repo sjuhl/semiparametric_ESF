@@ -106,12 +106,12 @@ registerDoRNG(12345)
 start.time <- Sys.time()
 
 # initialize progress bar
-pb <- txtProgressBar(max = nrow(input), style = 3)
+pb <- txtProgressBar(max = nrow(input), style = 3, char = '*')
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress = progress)
 
 # simulate
-sim_out <- foreach(i = nrow(input), .combine = rbind, .options.snow = opts,
+sim_out <- foreach(i = seq_len(nrow(input)), .combine = rbind, .options.snow = opts,
                    .packages = c("spdep","spatialreg","spfilteR")
                    ) %dopar% {
                      # simulation function
