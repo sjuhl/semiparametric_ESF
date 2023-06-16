@@ -38,11 +38,11 @@ sim_func <- function(spmultiplier, W, x, beta, dgp_type, ideal.setsize=F){
   if(dgp_type == "OLS"){
     y <- x*beta + e
   } else if(dgp_type == "SAR"){
-    y <- spmultiplier %*% (x*b + e)
+    y <- spmultiplier %*% (x * beta + e)
   } else if(dgp_type == "SEM"){
-    y <- x*b + spmultiplier %*% e
+    y <- x * beta + spmultiplier %*% e
   } else if(dgp_type == "SLX"){
-    y <- x*b + W %*% x + e
+    y <- x * beta + W %*% x + e
   }
   
   ### ESTIMATION ###
@@ -64,6 +64,12 @@ sim_func <- function(spmultiplier, W, x, beta, dgp_type, ideal.setsize=F){
   esf_MI <- lmFilter(y=y,x=x,W=W,positive=T,objfn="MI",tol=.1,ideal.setsize=ideal.setsize)
   esf_p <- lmFilter(y=y,x=x,W=W,positive=T,objfn="p",sig=.05,bonferroni=T,ideal.setsize=ideal.setsize)
   esf_pMI <- lmFilter(y=y,x=x,W=W,positive=T,objfn="pMI",sig=.05,ideal.setsize=ideal.setsize)
+
+  # 6) Moran's I
+  m.ols <- MI.resid(resid = residuals(ols), x = x, W = W, alternative = "greater")
+  m.sar <- MI.resid(resid = residuals(sar), x = x, W = W, alternative = "greater")
+  m.sem <- MI.resid(resid = residuals(sem), x = x, W = W, alternative = "greater")
+  m.slx <- MI.resid(resid = residuals(slx), x = x, W = W, alternative = "greater")
   
   ### Output ###
   out <- data.frame(ols=coef(ols)["x"]
@@ -87,6 +93,10 @@ sim_func <- function(spmultiplier, W, x, beta, dgp_type, ideal.setsize=F){
                     ,fit_filtered_p = esf_p$fit["Filtered"]
                     ,fit_filtered_MI = esf_MI$fit["Filtered"]
                     ,fit_filtered_pMI = esf_pMI$fit["Filtered"]
+                    ,moran_ols = m.ols$zI
+                    ,moran_sar = m.sar$zI
+                    ,moran_sem = m.sem$zI
+                    ,moran_slx = m.slx$zI
                     ,moran_init = esf_R2$moran["Initial","z"]
                     ,moran_filtered_R2 = esf_R2$moran["Filtered","z"]
                     ,moran_filtered_p = esf_p$moran["Filtered","z"]
