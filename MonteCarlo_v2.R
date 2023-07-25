@@ -42,17 +42,17 @@ all.equal(target=1, current=as.numeric(eigen(z.W_cd116)$values[1]))
 b <- 1
 
 # DGPs
-dgp_type <- c("OLS", "SAR", "SEM", "SLX")
-dgp_id <- 1:length(dgp_type)
+dgp_type <- c("OLS", "SAR", "SEM", "SLX", 'HET')
+dgp_id <- seq_along(dgp_type)
 
 # calculate spatial multipliers
-p <- c(0,.25,.5,.75)
+p <- c(0, .25, .5, .75)
 W <- list(z.W_states, z.W_cities, z.W_cd116)
-W_id <- c(1,2,3)
+W_id <- c(1, 2, 3)
 
-grid <- matrix(as.matrix(cbind(expand.grid(p,W_id,dgp_id),seq_len(length(p)*length(W)))),ncol=4
-               ,dimnames=list(NULL, c("p", "W_id","dgp_type","multi_id")))
-multipliers <- apply(grid,1,function(x) solve(diag(1,nrow(W[[x[2]]]))-x[1]*W[[x[2]]]))
+grid <- matrix(as.matrix(cbind(expand.grid(p, W_id, dgp_id), seq_len(length(p) * length(W)))), ncol = 4
+               ,dimnames = list(NULL, c("p", "W_id", "dgp_type", "multi_id")))
+multipliers <- apply(grid, 1 ,function(x) solve(diag(1, nrow(W[[x[2]]])) - x[1] * W[[x[2]]]))
 
 # cross-sections
 n <- sapply(W, nrow)
@@ -61,20 +61,20 @@ n <- sapply(W, nrow)
 set.seed(123)
 covars <- list()
 for(i in seq_along(n)){
-  covars[[i]] <- rnorm(n[i],0,1)
+  covars[[i]] <- rnorm(n[i], 0, 1)
 }
 
 ninput <- nrow(grid)
 nsim <- 1000
 
 # specify function inputs
-input <- data.frame(do.call(rbind,replicate(nsim,grid,simplify=F)))
-input <- input[order(input$dgp_type,input$W_id,input$p,input$multi_id),]
+input <- data.frame(do.call(rbind, replicate(nsim, grid, simplify = FALSE)))
+input <- input[order(input$dgp_type, input$W_id, input$p, input$multi_id),]
 # put correct dgp_type into dataframe
 input$dgp_type <- dgp_type[input[,'dgp_type']]
 
 unique(input)
-rownames(input) <- 1:nrow(input)
+rownames(input) <- seq_len(nrow(input))
 
 # add n to input matrix
 input$n <- n[input$W_id]
@@ -89,9 +89,9 @@ input <- input[!(input$dgp_type == 'OLS' & input$p > 0),]
 input <- input[!(input$dgp_type != 'OLS' & input$p == 0),]
 
 # test
-#sim_func(spmultiplier=multipliers[[input$multi_id[1]]],W=W[[input$W_id[1]]]
-#         ,x=covars[[input$W_id[1]]],beta=b,dgp_type=input$dgp_type[1]
-#         ,ideal.setsize=F)
+#sim_func(spmultiplier = multipliers[[input$multi_id[1]]], W = W[[input$W_id[1]]]
+#                              ,x = covars[[input$W_id[1]]], beta = b, theta = input$p[1]
+#                              ,dgp_type = input$dgp_type[1], ideal.setsize = FALSE)
 
 
 # parallel computing
@@ -112,12 +112,12 @@ opts <- list(progress = progress)
 
 # simulate
 sim_out <- foreach(i = seq_len(nrow(input)), .combine = rbind, .options.snow = opts,
-                   .packages = c("spdep","spatialreg","spfilteR")
+                   .packages = c("spdep", "spatialreg", "spfilteR")
                    ) %dopar% {
                      # simulation function
-                     sim_func(spmultiplier=multipliers[[input$multi_id[i]]],W=W[[input$W_id[i]]]
-                              ,x=covars[[input$W_id[i]]],beta=b,dgp_type=input$dgp_type[i]
-                              ,ideal.setsize=F)
+                     sim_func(spmultiplier = multipliers[[input$multi_id[i]]], W = W[[input$W_id[i]]]
+                              ,x = covars[[input$W_id[i]]], beta = b, theta = input$p[i]
+                              ,dgp_type = input$dgp_type[i], ideal.setsize = FALSE)
                    }
 close(pb)
 stopCluster(cl)
@@ -131,5 +131,6 @@ ifelse(!dir.exists(file.path("./SimOut"))
        ,dir.create(file.path("./SimOut")), FALSE)
 
 # save output
-save(input,sim_out,covars,nsim,time.taken,session_info,file="./SimOut/MC_Out_v2.RData")
+save(input, sim_out, covars, nsim, time.taken, session_info
+    ,file="./SimOut/MC_Out_v2.RData")
 

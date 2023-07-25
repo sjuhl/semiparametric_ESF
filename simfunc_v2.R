@@ -11,6 +11,7 @@
 # 2) SAR
 # 3) SEM
 # 4) SLX
+# 5) Spatial Heterogeneity (SLX)
 
 ### Models:
 # 1) Non-spatial OLS
@@ -27,22 +28,35 @@
 
 
 # general simulation function
-sim_func <- function(spmultiplier, W, x, beta, dgp_type, ideal.setsize=F){
+sim_func <- function(spmultiplier, W, x, beta, theta, dgp_type, ideal.setsize = FALSE){
   ### SIMULATE TRUE DGP ###
   n <- length(x)
   
   # iid errors
-  e <- rnorm(n,0,1)
+  e <- rnorm(n, 0, 1)
   
   # DGP type
   if(dgp_type == "OLS"){
-    y <- x*beta + e
+    y <- x * beta + e
   } else if(dgp_type == "SAR"){
     y <- spmultiplier %*% (x * beta + e)
   } else if(dgp_type == "SEM"){
     y <- x * beta + spmultiplier %*% e
   } else if(dgp_type == "SLX"){
-    y <- x * beta + W %*% x + e
+    y <- x * beta + theta * W %*% x + e
+  } else if(dgp_type == 'HET'){
+    theta1 <- theta - .5
+    theta2 <- theta
+
+    thetaWX <- W %*% x
+
+    thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)] <- theta1 * thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)]
+    tmp[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)] <- theta1 * thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)]
+
+    tmp[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)] <- theta2 * thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)]
+    tmp[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)] <- theta2 * thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)]
+
+    y <- x * beta + thetaWX + e
   }
   
   ### ESTIMATION ###
@@ -60,10 +74,13 @@ sim_func <- function(spmultiplier, W, x, beta, dgp_type, ideal.setsize=F){
   slx <- lm(y ~ x + WX)
   
   # 5) ESF
-  esf_R2 <- lmFilter(y=y,x=x,W=W,positive=T,objfn="R2",ideal.setsize=ideal.setsize)
-  esf_MI <- lmFilter(y=y,x=x,W=W,positive=T,objfn="MI",tol=.1,ideal.setsize=ideal.setsize)
-  esf_p <- lmFilter(y=y,x=x,W=W,positive=T,objfn="p",sig=.05,bonferroni=T,ideal.setsize=ideal.setsize)
-  esf_pMI <- lmFilter(y=y,x=x,W=W,positive=T,objfn="pMI",sig=.05,ideal.setsize=ideal.setsize)
+  esf_R2 <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "R2", ideal.setsize = ideal.setsize)
+  esf_MI <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "MI", tol=.1
+                    ,ideal.setsize = ideal.setsize)
+  esf_p <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "p", sig = .05, bonferroni = TRUE
+                    ,ideal.setsize = ideal.setsize)
+  esf_pMI <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "pMI", sig = .05
+                    ,ideal.setsize = ideal.setsize)
 
   # 6) Moran's I
   m.ols <- MI.resid(resid = residuals(ols), x = x, W = W, alternative = "greater")
@@ -72,7 +89,7 @@ sim_func <- function(spmultiplier, W, x, beta, dgp_type, ideal.setsize=F){
   m.slx <- MI.resid(resid = residuals(slx), x = x, W = W, alternative = "greater")
   
   ### Output ###
-  out <- data.frame(ols=coef(ols)["x"]
+  out <- data.frame(ols = coef(ols)["x"]
                     ,sar = coef(sar)["x"]
                     ,sem = coef(sem)["x"]
                     ,slx = coef(slx)["x"]
@@ -80,14 +97,14 @@ sim_func <- function(spmultiplier, W, x, beta, dgp_type, ideal.setsize=F){
                     ,filtered_p = coef(esf_p)["beta_1"]
                     ,filtered_MI = coef(esf_MI)["beta_1"]
                     ,filtered_pMI = coef(esf_pMI)["beta_1"]
-                    ,se_ols = summary(ols)$coefficients["x","Std. Error"]
+                    ,se_ols = summary(ols)$coefficients["x", "Std. Error"]
                     ,se_sar = sar$rest.se["x"]
                     ,se_sem = sem$rest.se["I(x - lambda * WX)x"]
-                    ,se_slx = summary(slx)$coefficients["x","Std. Error"]
-                    ,se_filtered_R2 = esf_R2$estimates["beta_1","SE"]
-                    ,se_filtered_p = esf_p$estimates["beta_1","SE"]
-                    ,se_filtered_MI = esf_MI$estimates["beta_1","SE"]
-                    ,se_filtered_pMI = esf_pMI$estimates["beta_1","SE"]
+                    ,se_slx = summary(slx)$coefficients["x", "Std. Error"]
+                    ,se_filtered_R2 = esf_R2$estimates["beta_1", "SE"]
+                    ,se_filtered_p = esf_p$estimates["beta_1", "SE"]
+                    ,se_filtered_MI = esf_MI$estimates["beta_1", "SE"]
+                    ,se_filtered_pMI = esf_pMI$estimates["beta_1", "SE"]
                     ,fit_init = esf_R2$fit["Initial"]
                     ,fit_filtered_R2 = esf_R2$fit["Filtered"]
                     ,fit_filtered_p = esf_p$fit["Filtered"]
@@ -97,11 +114,11 @@ sim_func <- function(spmultiplier, W, x, beta, dgp_type, ideal.setsize=F){
                     ,moran_sar = m.sar$zI
                     ,moran_sem = m.sem$zI
                     ,moran_slx = m.slx$zI
-                    ,moran_init = esf_R2$moran["Initial","z"]
-                    ,moran_filtered_R2 = esf_R2$moran["Filtered","z"]
-                    ,moran_filtered_p = esf_p$moran["Filtered","z"]
-                    ,moran_filtered_MI = esf_MI$moran["Filtered","z"]
-                    ,moran_filtered_pMI = esf_pMI$moran["Filtered","z"]
+                    ,moran_init = esf_R2$moran["Initial", "z"]
+                    ,moran_filtered_R2 = esf_R2$moran["Filtered", "z"]
+                    ,moran_filtered_p = esf_p$moran["Filtered", "z"]
+                    ,moran_filtered_MI = esf_MI$moran["Filtered", "z"]
+                    ,moran_filtered_pMI = esf_pMI$moran["Filtered", "z"]
                     ,nev_R2 = esf_R2$other$nev
                     ,nev_p = esf_p$other$nev
                     ,nev_MI = esf_MI$other$nev
