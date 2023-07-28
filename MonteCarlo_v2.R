@@ -55,8 +55,9 @@ grid <- matrix(as.matrix(cbind(expand.grid(p, W_id, dgp_id), seq_len(length(p) *
 #multipliers <- apply(grid, 1 ,function(x) solve(diag(1, nrow(W[[x[2]]])) - x[1] * W[[x[2]]]))
 
 multipliers <- NULL
-for(i in max(grid[,'multi_id'])){
-  multipliers[[i]] <- apply(grid[grid[,'multi_id'] == i,], 1 ,function(x) solve(diag(1, nrow(W[[x[2]]])) - x[1] * W[[x[2]]]))
+for(i in seq_len(max(grid[,'multi_id']))){
+  x <- unique(grid[grid[,'multi_id'] == i, c('p', 'W_id')])
+  multipliers[[i]] <- solve(diag(1, nrow(W[[x[2]]])) - x[1] * W[[x[2]]])
 }
 
 # cross-sections
