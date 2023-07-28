@@ -52,7 +52,12 @@ W_id <- c(1, 2, 3)
 
 grid <- matrix(as.matrix(cbind(expand.grid(p, W_id, dgp_id), seq_len(length(p) * length(W)))), ncol = 4
                ,dimnames = list(NULL, c("p", "W_id", "dgp_type", "multi_id")))
-multipliers <- apply(grid, 1 ,function(x) solve(diag(1, nrow(W[[x[2]]])) - x[1] * W[[x[2]]]))
+#multipliers <- apply(grid, 1 ,function(x) solve(diag(1, nrow(W[[x[2]]])) - x[1] * W[[x[2]]]))
+
+multipliers <- NULL
+for(i in max(grid[,'multi_id'])){
+  multipliers[[i]] <- apply(grid[grid[,'multi_id'] == i,], 1 ,function(x) solve(diag(1, nrow(W[[x[2]]])) - x[1] * W[[x[2]]]))
+}
 
 # cross-sections
 n <- sapply(W, nrow)
