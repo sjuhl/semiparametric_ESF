@@ -51,10 +51,10 @@ sim_func <- function(spmultiplier, W, x, beta, theta, dgp_type, ideal.setsize = 
     thetaWX <- W %*% x
 
     thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)] <- theta1 * thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)]
-    tmp[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)] <- theta1 * thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)]
+    thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)] <- theta1 * thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)]
 
-    tmp[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)] <- theta2 * thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)]
-    tmp[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)] <- theta2 * thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)]
+    thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)] <- theta2 * thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)]
+    thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)] <- theta2 * thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)]
 
     y <- x * beta + thetaWX + e
   }
@@ -110,6 +110,8 @@ sim_func <- function(spmultiplier, W, x, beta, theta, dgp_type, ideal.setsize = 
                     ,fit_filtered_p = esf_p$fit["Filtered"]
                     ,fit_filtered_MI = esf_MI$fit["Filtered"]
                     ,fit_filtered_pMI = esf_pMI$fit["Filtered"]
+                    ,fit_ols = summary(ols)$adj.r.squared
+                    ,fit_slx = summary(slx)$adj.r.squared
                     ,moran_ols = m.ols$zI
                     ,moran_sar = m.sar$zI
                     ,moran_sem = m.sem$zI
