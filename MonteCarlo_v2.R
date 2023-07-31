@@ -76,11 +76,11 @@ nsim <- 1000
 # specify function inputs
 input <- data.frame(do.call(rbind, replicate(nsim, grid, simplify = FALSE)))
 input <- input[order(input$dgp_type, input$W_id, input$p, input$multi_id),]
+
 # put correct dgp_type into dataframe
 input$dgp_type <- dgp_type[input[,'dgp_type']]
 
-unique(input)
-rownames(input) <- seq_len(nrow(input))
+dim(multipliers[[12]])
 
 # add n to input matrix
 input$n <- n[input$W_id]
@@ -94,10 +94,14 @@ input <- input[!(input$dgp_type == 'OLS' & input$p > 0),]
 # remove rho == 0 when DGP != 'OLS'
 input <- input[!(input$dgp_type != 'OLS' & input$p == 0),]
 
+# add correct rownames
+unique(input)
+rownames(input) <- seq_len(nrow(input))
+
 # test
-#sim_func(spmultiplier = multipliers[[input$multi_id[1]]], W = W[[input$W_id[1]]]
-#                              ,x = covars[[input$W_id[1]]], beta = b, theta = input$p[1]
-#                              ,dgp_type = input$dgp_type[1], ideal.setsize = FALSE)
+sim_func(spmultiplier = multipliers[[input$multi_id[1]]], W = W[[input$W_id[1]]]
+                              ,x = covars[[input$W_id[1]]], beta = b, theta = input$p[1]
+                              ,dgp_type = input$dgp_type[1], ideal.setsize = FALSE)
 
 
 # parallel computing
