@@ -99,9 +99,9 @@ unique(input)
 rownames(input) <- seq_len(nrow(input))
 
 # test
-sim_func(spmultiplier = multipliers[[input$multi_id[1]]], W = W[[input$W_id[1]]]
-                              ,x = covars[[input$W_id[1]]], beta = b, theta = input$p[1]
-                              ,dgp_type = input$dgp_type[1], ideal.setsize = FALSE)
+#sim_func(spmultiplier = multipliers[[input$multi_id[1]]], W = W[[input$W_id[1]]]
+#                              ,x = covars[[input$W_id[1]]], beta = b, theta = input$p[1]
+#                              ,dgp_type = input$dgp_type[1], ideal.setsize = FALSE)
 
 
 # parallel computing
