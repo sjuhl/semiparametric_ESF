@@ -24,15 +24,14 @@ source("./simfunc_v2.R")
 load("./W.RData")
 
 # spectral normalization
-z.W_states <- W_states/as.numeric(eigen(W_states)$values[1])
-z.W_cities <- W_cities/as.numeric(eigen(W_cities)$values[1])
-z.W_cd116 <- W_cd116/as.numeric(eigen(W_cd116)$values[1])
+z.W_states <- W_states / as.numeric(eigen(W_states)$values[1])
+z.W_cities <- W_cities / as.numeric(eigen(W_cities)$values[1])
+z.W_cd116 <- W_cd116 / as.numeric(eigen(W_cd116)$values[1])
 
 # check
-all.equal(target=1, current=as.numeric(eigen(z.W_states)$values[1]))
-all.equal(target=1, current=as.numeric(eigen(z.W_cities)$values[1]))
-all.equal(target=1, current=as.numeric(eigen(z.W_cd116)$values[1]))
-
+all.equal(target = 1, current = as.numeric(eigen(z.W_states)$values[1]))
+all.equal(target = 1, current = as.numeric(eigen(z.W_cities)$values[1]))
+all.equal(target = 1, current = as.numeric(eigen(z.W_cd116)$values[1]))
 
 
 ###################
@@ -54,7 +53,7 @@ grid <- matrix(as.matrix(cbind(expand.grid(p, W_id, dgp_id), seq_len(length(p) *
                ,dimnames = list(NULL, c("p", "W_id", "dgp_type", "multi_id")))
 #multipliers <- apply(grid, 1 ,function(x) solve(diag(1, nrow(W[[x[2]]])) - x[1] * W[[x[2]]]))
 
-multipliers <- NULL
+multipliers <- list()
 for(i in seq_len(max(grid[,'multi_id']))){
   x <- unique(grid[grid[,'multi_id'] == i, c('p', 'W_id')])
   multipliers[[i]] <- solve(diag(1, nrow(W[[x[2]]])) - x[1] * W[[x[2]]])
@@ -80,8 +79,6 @@ input <- input[order(input$dgp_type, input$W_id, input$p, input$multi_id),]
 # put correct dgp_type into dataframe
 input$dgp_type <- dgp_type[input[,'dgp_type']]
 
-dim(multipliers[[12]])
-
 # add n to input matrix
 input$n <- n[input$W_id]
 
@@ -103,12 +100,10 @@ rownames(input) <- seq_len(nrow(input))
 #                              ,x = covars[[input$W_id[1]]], beta = b, theta = input$p[1]
 #                              ,dgp_type = input$dgp_type[1], ideal.setsize = FALSE)
 
-
 # parallel computing
 (ncores <- detectCores())
 nworkers <- ncores - 1
 cl <- makeCluster(nworkers)
-#registerDoParallel(cl)
 registerDoSNOW(cl)
 registerDoRNG(12345)
 
@@ -135,7 +130,6 @@ stopCluster(cl)
 (time.taken <- Sys.time() - start.time)
 session_info <- sessionInfo()
 
-
 # create empty folder (if not existing already)
 ifelse(!dir.exists(file.path("./SimOut"))
        ,dir.create(file.path("./SimOut")), FALSE)
@@ -143,4 +137,3 @@ ifelse(!dir.exists(file.path("./SimOut"))
 # save output
 save(input, sim_out, covars, nsim, time.taken, session_info
     ,file="./SimOut/MC_Out_v2.RData")
-
