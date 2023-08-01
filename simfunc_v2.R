@@ -48,15 +48,15 @@ sim_func <- function(spmultiplier, W, x, beta, theta, dgp_type, ideal.setsize = 
     theta1 <- theta - .5
     theta2 <- theta
 
-    thetaWX <- W %*% x
+    thetaW <- W
+    
+    thetaW[(nrow(thetaW)/2 + 1) : nrow(thetaW), (nrow(thetaW)/2 + 1) : nrow(thetaW)] <- theta1 * thetaW[(nrow(thetaW)/2 + 1) : nrow(thetaW), (nrow(thetaW)/2 + 1) : nrow(thetaW)]
+    thetaW[1 : (nrow(thetaW)/2), 1 : (nrow(thetaW)/2)] <- theta1 * thetaW[1 : (nrow(thetaW)/2), 1 : (nrow(thetaW)/2)]
 
-    thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)] <- theta1 * thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)]
-    thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)] <- theta1 * thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)]
+    thetaW[1 : (nrow(thetaW)/2), (nrow(thetaW)/2 + 1) : nrow(thetaW)] <- theta2 * thetaW[1 : (nrow(thetaW)/2), (nrow(thetaW)/2 + 1) : nrow(thetaW)]
+    thetaW[(nrow(thetaW)/2 + 1) : nrow(thetaW), 1 : (nrow(thetaW)/2)] <- theta2 * thetaW[(nrow(thetaW)/2 + 1) : nrow(thetaW), 1 : (nrow(thetaW)/2)]
 
-    thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)] <- theta2 * thetaWX[1 : (nrow(thetaWX)/2), 1 : (nrow(thetaWX)/2)]
-    thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)] <- theta2 * thetaWX[(nrow(thetaWX)/2 + 1) : nrow(thetaWX), (nrow(thetaWX)/2 + 1) : nrow(thetaWX)]
-
-    y <- x * beta + thetaWX + e
+    y <- x * beta + thetaW %*% x + e
   }
   
   ### ESTIMATION ###
