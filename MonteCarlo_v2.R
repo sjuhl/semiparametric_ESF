@@ -38,7 +38,7 @@ all.equal(target = 1, current = as.numeric(eigen(z.W_cd116)$values[1]))
 # MONTE CARLO SIMULATION
 
 # parameters
-b <- 1
+b <- 10
 
 # DGPs
 dgp_type <- c("OLS", "SAR", "SEM", "SLX", 'HET')
