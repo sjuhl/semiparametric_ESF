@@ -64,10 +64,10 @@ sim_func <- function(spmultiplier, W, x, beta, theta, dgp_type, ideal.setsize = 
   ols <- lm(y ~ x)
   
   # 2) SAR
-  sar <- lagsarlm(y ~ x, listw = mat2listw(W))
+  sar <- lagsarlm(y ~ x, listw = mat2listw(W, style = 'M'))
   
   # 3) SEM
-  sem <- errorsarlm(y ~ x, listw = mat2listw(W))
+  sem <- errorsarlm(y ~ x, listw = mat2listw(W, style = 'M'))
   
   # 4) SLX
   WX <- W %*% x
@@ -93,6 +93,9 @@ sim_func <- function(spmultiplier, W, x, beta, theta, dgp_type, ideal.setsize = 
                     ,sar = coef(sar)["x"]
                     ,sem = coef(sem)["x"]
                     ,slx = coef(slx)["x"]
+                    ,rho = coef(sar)["rho"]
+                    ,lambda = coef(sem)["lambda"]
+                    ,theta = coef(slx)["WX"]
                     ,filtered_R2 = coef(esf_R2)["beta_1"]
                     ,filtered_p = coef(esf_p)["beta_1"]
                     ,filtered_MI = coef(esf_MI)["beta_1"]
