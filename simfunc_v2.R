@@ -62,24 +62,32 @@ sim_func <- function(spmultiplier, W, x, beta, theta, dgp_type, ideal.setsize = 
   ### ESTIMATION ###
   # 1) OLS
   ols <- lm(y ~ x)
+  lm_tests <- lm.LMtests(model = ols, listw = mat2listw(W, style = 'M')
+                        ,zero.policy = TRUE, test = c('RLMerr', 'RLMlag'))
+  names(lm_tests$RLMerr)
+  lm_tests$RLMerr$statistic
+  lm_tests$RLMerr$p.value
   
   # 2) SAR
-  sar <- lagsarlm(y ~ x, listw = mat2listw(W, style = 'M'))
-  
+  sar <- lagsarlm(y ~ x, listw = mat2listw(W, style = 'M'), zero.policy = TRUE)
+
   # 3) SEM
-  sem <- errorsarlm(y ~ x, listw = mat2listw(W, style = 'M'))
-  
+  sem <- errorsarlm(y ~ x, listw = mat2listw(W, style = 'M'), zero.policy = TRUE)
+   
   # 4) SLX
   WX <- W %*% x
   slx <- lm(y ~ x + WX)
   
   # 5) ESF
-  esf_R2 <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "R2", ideal.setsize = ideal.setsize)
-  esf_MI <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "MI", tol=.1
+  esf_R2 <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "R2", alpha = .1 
+                     ,ideal.setsize = ideal.setsize)
+#  esf_MI <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "MI", tol=.1
+  esf_MI <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "MI", tol = .05, alpha = .1
+                      ,ideal.setsize = ideal.setsize)
+#  esf_p <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "p", sig = .05, bonferroni = TRUE
+  esf_p <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "p", sig = .05, alpha = .1, bonferroni = FALSE
                     ,ideal.setsize = ideal.setsize)
-  esf_p <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "p", sig = .05, bonferroni = TRUE
-                    ,ideal.setsize = ideal.setsize)
-  esf_pMI <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "pMI", sig = .05
+  esf_pMI <- lmFilter(y = y, x = x, W = W, positive = TRUE, objfn = "pMI", sig = .05, alpha = .1
                     ,ideal.setsize = ideal.setsize)
 
   # 6) Moran's I
@@ -104,10 +112,17 @@ sim_func <- function(spmultiplier, W, x, beta, theta, dgp_type, ideal.setsize = 
                     ,se_sar = sar$rest.se["x"]
                     ,se_sem = sem$rest.se["I(x - lambda * WX)x"]
                     ,se_slx = summary(slx)$coefficients["x", "Std. Error"]
+                    ,se_rho = sar$rho.se
+                    ,se_lambda = sem$lambda.se
+                    ,se_theta = summary(slx)$coefficients["WX", "Std. Error"]
                     ,se_filtered_R2 = esf_R2$estimates["beta_1", "SE"]
                     ,se_filtered_p = esf_p$estimates["beta_1", "SE"]
                     ,se_filtered_MI = esf_MI$estimates["beta_1", "SE"]
                     ,se_filtered_pMI = esf_pMI$estimates["beta_1", "SE"]
+                    ,RLMlag_test = lm_tests$RLMlag$statistic
+                    ,RLMlag_test_p = lm_tests$RLMlag$p.value
+                    ,RLMerr_test = lm_tests$RLMerr$statistic
+                    ,RLMerr_test_p = lm_tests$RLMerr$p.value
                     ,fit_init = esf_R2$fit["Initial"]
                     ,fit_filtered_R2 = esf_R2$fit["Filtered"]
                     ,fit_filtered_p = esf_p$fit["Filtered"]
