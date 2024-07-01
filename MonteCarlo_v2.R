@@ -48,9 +48,10 @@ dgp_id <- seq_along(dgp_type)
 p <- c(0, .25, .5, .75)
 W <- list(z.W_states, z.W_cities, z.W_cd116)
 W_id <- c(1, 2, 3)
+spatial_covars <- c(1, 0)
 
-grid <- matrix(as.matrix(cbind(expand.grid(p, W_id, dgp_id), seq_len(length(p) * length(W)))), ncol = 4
-               ,dimnames = list(NULL, c("p", "W_id", "dgp_type", "multi_id")))
+grid <- matrix(as.matrix(cbind(expand.grid(p, W_id, dgp_id, spatial_covars), seq_len(length(p) * length(W)))), ncol = 5
+               ,dimnames = list(NULL, c("p", "W_id", "dgp_type", "spatial_covars", "multi_id")))
 #multipliers <- apply(grid, 1 ,function(x) solve(diag(1, nrow(W[[x[2]]])) - x[1] * W[[x[2]]]))
 
 multipliers <- list()
@@ -91,14 +92,17 @@ input <- input[!(input$dgp_type == 'OLS' & input$p > 0),]
 # remove rho == 0 when DGP != 'OLS'
 input <- input[!(input$dgp_type != 'OLS' & input$p == 0),]
 
+# remove rho = 0 & spatial_covars == 1 OR dgp_type in c()'OLS', 'SLX', 'HET') & spatial covars == 1
+input <- input[!(input$p == 0 & input$spatial_covars == 1 | input$dgp_type %in% c('OLS', 'SLX', 'HET') & input$spatial_covars == 1),]
+
 # add correct rownames
 unique(input)
 rownames(input) <- seq_len(nrow(input))
 
 # test
-#sim_func(spmultiplier = multipliers[[input$multi_id[1]]], W = W[[input$W_id[1]]]
-#                              ,x = covars[[input$W_id[1]]], beta = b, theta = input$p[1]
-#                              ,dgp_type = input$dgp_type[1], ideal.setsize = FALSE)
+sim_func(spmultiplier = multipliers[[input$multi_id[1]]], W = W[[input$W_id[1]]]
+                              ,x = covars[[input$W_id[1]]], spatial_covars = input$spatial_covars[1], beta = b, theta = input$p[1]
+                              ,dgp_type = input$dgp_type[1], ideal.setsize = FALSE)
 
 # parallel computing
 (ncores <- detectCores())
@@ -121,7 +125,7 @@ sim_out <- foreach(i = seq_len(nrow(input)), .combine = rbind, .options.snow = o
                    ) %dopar% {
                      # simulation function
                      sim_func(spmultiplier = multipliers[[input$multi_id[i]]], W = W[[input$W_id[i]]]
-                              ,x = covars[[input$W_id[i]]], beta = b, theta = input$p[i]
+                              ,x = covars[[input$W_id[i]]], spatial_covars = input$spatial_covars[i], beta = b, theta = input$p[i]
                               ,dgp_type = input$dgp_type[i], ideal.setsize = FALSE)
                    }
 close(pb)

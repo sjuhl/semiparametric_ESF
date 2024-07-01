@@ -28,12 +28,17 @@
 
 
 # general simulation function
-sim_func <- function(spmultiplier, W, x, beta, theta, dgp_type, ideal.setsize = FALSE){
+sim_func <- function(spmultiplier, W, x, spatial_covars, beta, theta, dgp_type, ideal.setsize = FALSE){
   ### SIMULATE TRUE DGP ###
   n <- length(x)
   
   # iid errors
   e <- rnorm(n, 0, 1)
+
+  # spatial covariates
+  if(spatial_covars == 1){
+    x <- spmultiplier %*% x
+  }
   
   # DGP type
   if(dgp_type == "OLS"){
