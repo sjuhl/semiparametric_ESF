@@ -67,11 +67,8 @@ sim_func <- function(spmultiplier, W, x, spatial_covars, beta, theta, dgp_type, 
   ### ESTIMATION ###
   # 1) OLS
   ols <- lm(y ~ x)
-  lm_tests <- lm.LMtests(model = ols, listw = mat2listw(W, style = 'M')
-                        ,zero.policy = TRUE, test = c('RLMerr', 'RLMlag'))
-  names(lm_tests$RLMerr)
-  lm_tests$RLMerr$statistic
-  lm_tests$RLMerr$p.value
+  lm_tests <- lm.RStests(model = ols, listw = mat2listw(W, style = 'M')
+                        ,zero.policy = TRUE, test = c('adjRSerr', 'adjRSlag'))
   
   # 2) SAR
   sar <- lagsarlm(y ~ x, listw = mat2listw(W, style = 'M'), zero.policy = TRUE)
@@ -124,10 +121,10 @@ sim_func <- function(spmultiplier, W, x, spatial_covars, beta, theta, dgp_type, 
                     ,se_filtered_p = esf_p$estimates["beta_1", "SE"]
                     ,se_filtered_MI = esf_MI$estimates["beta_1", "SE"]
                     ,se_filtered_pMI = esf_pMI$estimates["beta_1", "SE"]
-                    ,RLMlag_test = lm_tests$RLMlag$statistic
-                    ,RLMlag_test_p = lm_tests$RLMlag$p.value
-                    ,RLMerr_test = lm_tests$RLMerr$statistic
-                    ,RLMerr_test_p = lm_tests$RLMerr$p.value
+                    ,RLMlag_test = lm_tests$adjRSlag$statistic
+                    ,RLMlag_test_p = lm_tests$adjRSlag$p.value
+                    ,RLMerr_test = lm_tests$adjRSerr$statistic
+                    ,RLMerr_test_p = lm_tests$adjRSerr$p.value
                     ,fit_init = esf_R2$fit["Initial"]
                     ,fit_filtered_R2 = esf_R2$fit["Filtered"]
                     ,fit_filtered_p = esf_p$fit["Filtered"]
