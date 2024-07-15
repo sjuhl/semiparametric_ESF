@@ -67,14 +67,14 @@ sim_func <- function(spmultiplier, W, x, spatial_covars, beta, theta, dgp_type, 
   ### ESTIMATION ###
   # 1) OLS
   ols <- lm(y ~ x)
-  lm_tests <- lm.RStests(model = ols, listw = mat2listw(W, style = 'M')
+  lm_tests <- lm.RStests(model = ols, listw = mat2listw(W, style = 'M', zero.policy = TRUE)
                         ,zero.policy = TRUE, test = c('adjRSerr', 'adjRSlag'))
   
   # 2) SAR
-  sar <- lagsarlm(y ~ x, listw = mat2listw(W, style = 'M'), zero.policy = TRUE)
+  sar <- lagsarlm(y ~ x, listw = mat2listw(W, style = 'M', zero.policy = TRUE), zero.policy = TRUE)
 
   # 3) SEM
-  sem <- errorsarlm(y ~ x, listw = mat2listw(W, style = 'M'), zero.policy = TRUE)
+  sem <- errorsarlm(y ~ x, listw = mat2listw(W, style = 'M', zero.policy = TRUE), zero.policy = TRUE)
    
   # 4) SLX
   WX <- W %*% x
